@@ -7,6 +7,7 @@ import os
 def eeg_log(log_file):
     os.system('putty -serial COM7 -sercfg 115200 -sessionlog C:\\Users\\dmr85\\Downloads\\UkrWordsClassification\\data\\logs\\record_' + log_file)
 
+
 def eeg_timer(ukr_word):
     time.sleep(4)
     for j in range(20):
@@ -15,22 +16,29 @@ def eeg_timer(ukr_word):
             time.sleep(1)
     print("Finish")
 
+
 if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print("Error: please provide one of words as an argument: victory, defeat, msytery, word, nothing")
+        quit()
     if sys.argv[1] == "victory":
-	log_file = "victory.log"
-	ukr_word = "Перемога"
+	    log_file = "victory.log"
+	    ukr_word = "Перемога"
     elif sys.argv[1] == "defeat":
-	log_file = "lose.log"
-	ukr_word = "Поразка"
+	    log_file = "lose.log"
+	    ukr_word = "Поразка"
     elif sys.argv[1] == "mystery":
-	log_file = secret.log"
-	ukr_word = "Таємниця"
+	    log_file = "secret.log"
+	    ukr_word = "Таємниця"
     elif sys.argv[1] == "word":
-	log_file = "word.log"
-	ukr_word = "Слово"
+	    log_file = "word.log"
+	    ukr_word = "Слово"
     elif sys.argv[1] == "nothing":
-	log_file = "nothing.log"
-	ukr_word = ""
+	    log_file = "nothing.log"
+	    ukr_word = ""
+    else:
+        print("Error: please provide one of words as an argument: victory, defeat, msytery, word, nothing")
+        quit()
 
     start = time.time()
 
