@@ -1,4 +1,5 @@
 from tensorflow.keras.models import load_model
+import ukr_words_eeg_processing
 import multiprocessing
 import numpy as np
 import time
@@ -7,31 +8,50 @@ import os
 
 
 def eeg_log(log_file):
-    os.system('putty -serial COM7 -sercfg 115200 -sessionlog ' + log_file)
+    os.system('sudo putty /dev/ttyUSB0 -serial -sercfg 115200,8,n,1,N -sessionlog ' + log_file + ' > /dev/null 2>&1')
+    # Windows
+    # os.system('putty -serial COM7 -sercfg 115200 -sessionlog ' + log_file)
 
 
 def eeg_timer():
-    time.sleep(3)
+    time.sleep(4)
     print("Recording")
     for i in range(5):
         print(".")
         time.sleep(1)
 
-    os.system('taskkill /IM "putty.exe" /F >nul 2>&1')
+    os.system('sudo killall putty')
+    # Windows
+    # os.system('taskkill /IM "putty.exe" /F >nul 2>&1')
     print("\nComplete")
 
 
 def get_word(log_file):
 
-    # TODO: filter data
+    raw_eeg_data = ukr_words_eeg_processing.manual_filter_file(log_file)
+
+    eeg_channels = [[] for x in range(8)]
+    for sample in raw_eeg_data:
+        for i in range(8):
+            eeg_channels[i].append(sample[i])
+
+    filtered_eeg_channels = []
+    for i in range(8):
+        filtered_eeg_channels.append(ukr_words_eeg_processing.filter_channel(eeg_channels[i], i + 1))
+
+    lines = []
+    for i in range(len(filtered_eeg_channels[0])):
+        l = []
+        for j in range(8):
+            l.append(filtered_eeg_channels[j][i])
+        l = [str(x) for x in l]
+        lines.append(" ".join(l))
+
     N_logs = 1
     N_channels = 8
     N_samples = 1000
 
     X = np.zeros((N_logs, N_channels, N_samples))
-
-    f = open(log_file, "r")
-    lines = f.readlines()[38:1038]
 
     eeg_data = np.zeros(shape=(N_channels, N_samples))
     sample_counter = 0
@@ -57,17 +77,16 @@ def get_word(log_file):
             val = val + stride
             ctr = ctr + 1
 
-    #model = load_model('models/1dcnn_lstm.h5')
-    #pred = model.predict(X_test)
+    model = load_model('models/1dcnn_lstm_v2.h5')
+    pred = model.predict(X_test)
 
-    print(pred)
-    return "s"
+    Y_pred = np.argmax(pred, axis=1)
+    return ukr_words_eeg_processing.word_decryptor(Y_pred)
 
 
 if __name__ == '__main__':
 
-    log_file = "C:\\Users\\dmr85\\Downloads\\UkrWordsClassification\\data\\test_logs\\record_2.log"
-    os.add_dll_directory("C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/bin")
+    log_file = "/home/neizer/Diploma/UkrWordsClassification/data/test_logs/record_3.log"
 
     while True:
         print("Start recording word[Y/n]:")
